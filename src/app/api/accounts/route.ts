@@ -59,7 +59,9 @@ export async function POST(request: Request) {
 				email,
 				passwordHash: hashPassword(crypto.randomUUID()),
 				name: username,
-				role: input.role,
+				// This deployment allows exactly one admin (the owner created at setup);
+				// accounts created here are always "user", regardless of what a caller sends.
+				role: "user",
 				disabled: true,
 				canManageMailboxes: true,
 				createdByUserId: access.user!.id,

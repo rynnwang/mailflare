@@ -151,7 +151,6 @@ export const createAccountSchema = z.object({
 export const createUserAccountSchema = z.object({
 	username: z.string().trim().min(1).max(64).regex(/^[a-zA-Z0-9._%+-]+$/),
 	domainId: z.string().min(1),
-	role: z.enum(["admin", "user"]).default("user"),
 });
 
 export const updateAccountSchema = z.object({

@@ -17,7 +17,6 @@ export default function AccountsPage() {
 	const [domains, setDomains] = useState<Domain[]>([]);
 	const [username, setUsername] = useState("");
 	const [domainId, setDomainId] = useState("");
-	const [role, setRole] = useState<"admin" | "user">("user");
 	const [loading, setLoading] = useState(true);
 	const [saving, setSaving] = useState(false);
 	const [createOpen, setCreateOpen] = useState(false);
@@ -52,7 +51,7 @@ export default function AccountsPage() {
 		setSaving(true);
 		setMessage(null);
 		try {
-			const response = await authFetch("/api/accounts", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ username, domainId, role }) });
+			const response = await authFetch("/api/accounts", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ username, domainId }) });
 			const data = (await response.json()) as AccountResponse & { inviteUrl?: string };
 			if (!response.ok) throw new Error(data.error ?? "Unable to create account");
 			setUsername("");
@@ -129,7 +128,6 @@ export default function AccountsPage() {
 			) : (
 				<form onSubmit={createAccount} className="space-y-4">
 					<div className="space-y-2"><Label htmlFor="account-username">Email</Label><div className="flex h-10 overflow-hidden rounded-md border border-neutral-200 bg-white"><Input id="account-username" value={username} onChange={(event) => setUsername(event.target.value)} placeholder="username" className="min-w-0 flex-1 rounded-none border-0 shadow-none" required /><span className="flex items-center text-sm text-neutral-400">@</span><Select aria-label="Domain" containerClassName="min-w-0 max-w-[55%] border-0 rounded-none px-0" className="min-w-0 w-full bg-transparent px-3 text-sm" value={domainId} onChange={(event) => setDomainId(event.target.value)} required><option value="">Select domain</option>{domains.map((domain) => <option key={domain.id} value={domain.id}>{domain.hostname}</option>)}</Select></div></div>
-					<div className="space-y-2"><Label htmlFor="account-role">Role</Label><Select id="account-role" value={role} onChange={(event) => setRole(event.target.value as "admin" | "user")} containerClassName="h-10 w-full rounded-md bg-white shadow-sm shadow-neutral-200/50 focus-within:border-blue-600" className="w-full bg-transparent text-sm focus-visible:outline-none"><option value="user">User</option><option value="admin">Admin</option></Select></div>
 					{message && <p className="text-sm text-red-600">{message}</p>}<Button type="submit" disabled={saving || !domainId}>{saving ? "Creating..." : "Create account"}</Button>
 				</form>
 			)}
