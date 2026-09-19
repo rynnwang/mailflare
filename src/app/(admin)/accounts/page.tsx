@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { Copy, Plus } from "lucide-react";
+import { Copy, Plus, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
@@ -22,6 +22,7 @@ export default function AccountsPage() {
 	const [message, setMessage] = useState<string | null>(null);
 	const [inviteUrl, setInviteUrl] = useState<string | null>(null);
 	const [copiedId, setCopiedId] = useState<string | null>(null);
+	const [deletingId, setDeletingId] = useState<string | null>(null);
 
 	async function loadAccounts() {
 		const response = await authFetch("/api/accounts");
@@ -83,8 +84,25 @@ export default function AccountsPage() {
 		if (data.inviteUrl) await copyInviteLink(data.inviteUrl, accountId);
 	}
 
+	async function deleteAccount(account: Account) {
+		if (!window.confirm(`Remove ${account.email}? This deletes their mailbox and mail, and cannot be undone.`)) return;
+		setMessage(null);
+		setDeletingId(account.id);
+		try {
+			const response = await authFetch(`/api/accounts/${account.id}`, { method: "DELETE" });
+			const data = (await response.json()) as { error?: string };
+			if (!response.ok) throw new Error(data.error ?? "Unable to remove account");
+			await loadAccounts();
+		} catch (error) {
+			setMessage(error instanceof Error ? error.message : "Unable to remove account");
+		} finally {
+			setDeletingId(null);
+		}
+	}
+
 	return <div className="space-y-6">
 		<div className="flex items-center justify-between gap-4"><div><h1 className="text-3xl font-medium text-neutral-900">Accounts</h1><p className="mt-2 text-sm text-neutral-500">Manage accounts and their inboxes.</p></div><Button onClick={() => setCreateOpen(true)}><Plus className="h-4 w-4" />New account</Button></div>
+		{message && !createOpen && <p className="text-sm text-red-600">{message}</p>}
 		<div className="relative"><div className="grid gap-3">
 			{loading && <p className="text-sm text-neutral-500">Loading...</p>}
 			{accounts.map((account) => (
@@ -104,6 +122,12 @@ export default function AccountsPage() {
 						<Button type="button" variant="outline" size="sm" onClick={() => regenerateInvite(account.id)}>
 							<Copy className="h-4 w-4" />
 							{copiedId === account.id ? "Copied" : "Copy invite link"}
+						</Button>
+					)}
+					{account.role !== "admin" && (
+						<Button type="button" variant="destructive" size="sm" disabled={deletingId === account.id} onClick={() => deleteAccount(account)}>
+							<Trash2 className="h-4 w-4" />
+							{deletingId === account.id ? "Removing..." : "Remove"}
 						</Button>
 					)}
 				</div>
