@@ -108,13 +108,13 @@ Mailbox authorization is separate from user role and goes through `src/lib/mailb
 
 `messages.status` is a free-text column driving the folder views: `received` (inbox), `sent`, `draft`, `spam`, `trash`, `archived`. Orthogonal to that are `starred`, `snoozedUntil`, and `folderId` (user-created folders in the `folders` table). A "folder" route under `src/app/(dashboard)/` is usually a status filter, not a table.
 
-### Licensing gates branding
+### Licensing is unlocked on this fork
 
-Pro/Team keys are validated against Paymug (`src/lib/licenses/`); only a one-way key hash is stored. Without an active license the app falls back to the default name, icon, and favicon, and custom branding is unavailable. `getLicenseEntitlements` is the gate.
+Upstream gates Pro/Team features (custom branding, multi-account management, shared-mailbox delegated access, email forwarding) behind a Paymug-validated license key (`src/lib/licenses/`). **This fork has deliberately removed that gate**: `getLicenseEntitlements` (`src/lib/licenses/service.ts`) hardcodes every entitlement to `true` regardless of plan, and `isTeamMailboxSharingEnabled` (`src/lib/mailboxes/access-utils.ts`) always returns `true`. The Licenses page, the "Upgrade" nav badge (`LicenseIndicator`), and `LicenseRequiredOverlay` have all been deleted along with it — there is no purchase path left in the UI. `src/app/api/licenses/*` (activate/deactivate/validate against Paymug) still exists server-side but is unreachable from any UI and effectively dead. Accounts created via Admin → Accounts are always `role: "user"` (enforced in `POST /api/accounts`, not just hidden in the UI) — this deployment intentionally allows exactly one admin, the owner created at setup.
 
-### Self-update
+### No self-update
 
-The admin overview dispatches `deploy-update.yml` (constant in `src/app/api/admin/update/utils.ts`) in the installation repo, which merges the upstream default branch and applies D1 migrations. It does not build or deploy. The README refers to this workflow as `update.yml`; the code is authoritative.
+Upstream's admin overview had an "Update Mailflare" button that dispatched a GitHub Actions workflow to merge the upstream default branch and apply D1 migrations (`src/app/api/admin/update/`). **This has been removed from this fork** — the divergence from upstream (see above, plus the invite-link account flow in `src/lib/auth/account-invite.ts`) means an automated upstream merge would conflict with or silently undo these changes. Keeping this fork in sync with upstream, if ever wanted, should be done deliberately (e.g. by an assistant session reviewing what changed) rather than via automated merge.
 
 ## Conventions
 

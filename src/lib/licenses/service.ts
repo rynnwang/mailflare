@@ -45,16 +45,15 @@ export async function getLicenseStatus(env: CloudflareEnv): Promise<LicenseStatu
 export async function getLicenseEntitlements(env: CloudflareEnv): Promise<LicenseEntitlements> {
 	try {
 		const status = await getLicenseStatus(env);
-		// TODO: confirm Paymug's exact feature identifiers when they are documented; plan is authoritative meanwhile.
+		// This self-hosted instance runs with every capability unlocked, independent of plan.
 		return {
 			plan: status.plan,
-			canCustomizeBranding: status.active && (status.plan === "pro" || status.plan === "team"),
-			// Multi-account management is unlocked on this self-hosted instance regardless of plan.
+			canCustomizeBranding: true,
 			canManageAccounts: true,
-			canForwardEmail: status.active && (status.plan === "pro" || status.plan === "team"),
+			canForwardEmail: true,
 		};
 	} catch {
-		return { plan: "community", canCustomizeBranding: false, canManageAccounts: true, canForwardEmail: false };
+		return { plan: "community", canCustomizeBranding: true, canManageAccounts: true, canForwardEmail: true };
 	}
 }
 

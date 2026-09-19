@@ -7,7 +7,6 @@ import {
   Mail,
   Settings,
   Palette,
-  BadgeDollarSign,
   Users,
   Route,
   Webhook,
@@ -45,7 +44,6 @@ const sections = [
     label: "Product",
     links: [
       { href: "/branding", label: "Branding", icon: Palette },
-      { href: "/licenses", label: "Licenses", icon: BadgeDollarSign },
       // { href: "/api-keys", label: "API Keys", icon: KeyRound },
     ],
   },
