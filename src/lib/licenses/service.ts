@@ -49,11 +49,12 @@ export async function getLicenseEntitlements(env: CloudflareEnv): Promise<Licens
 		return {
 			plan: status.plan,
 			canCustomizeBranding: status.active && (status.plan === "pro" || status.plan === "team"),
-			canManageAccounts: status.active && status.plan === "team",
+			// Multi-account management is unlocked on this self-hosted instance regardless of plan.
+			canManageAccounts: true,
 			canForwardEmail: status.active && (status.plan === "pro" || status.plan === "team"),
 		};
 	} catch {
-		return { plan: "community", canCustomizeBranding: false, canManageAccounts: false, canForwardEmail: false };
+		return { plan: "community", canCustomizeBranding: false, canManageAccounts: true, canForwardEmail: false };
 	}
 }
 
