@@ -140,7 +140,8 @@ export default function MailboxesPage() {
 										id="mailbox-type"
 										value={mailboxType}
 										onChange={(event) => setMailboxType(event.target.value as "personal" | "shared")}
-										className="flex h-10 w-full rounded-md border border-neutral-200 bg-white px-3 text-sm shadow-sm shadow-neutral-200/50 focus-visible:border-blue-600 focus-visible:outline-none"
+										containerClassName="h-10 w-full rounded-md bg-white shadow-sm shadow-neutral-200/50 focus-within:border-blue-600"
+										className="w-full bg-transparent text-sm focus-visible:outline-none"
 									>
 										<option value="personal">Personal inbox</option>
 										<option value="shared">Shared inbox</option>
@@ -158,7 +159,8 @@ export default function MailboxesPage() {
 										setOwnerUserId(event.target.value);
 										if (owner) setDisplayName(owner.name);
 									}}
-									className="flex h-10 w-full rounded-md border border-neutral-200 bg-white px-3 text-sm shadow-sm shadow-neutral-200/50 focus-visible:border-blue-600 focus-visible:outline-none"
+									containerClassName="h-10 w-full rounded-md bg-white shadow-sm shadow-neutral-200/50 focus-within:border-blue-600"
+									className="w-full bg-transparent text-sm focus-visible:outline-none"
 								>
 									{mailboxOwners.map((owner) => (
 										<option key={owner.id} value={owner.id}>
@@ -194,7 +196,8 @@ export default function MailboxesPage() {
 									<span className="flex items-center text-sm text-neutral-400">@</span>
 									<Select
 										aria-label="Domain"
-										className="min-w-0 max-w-[55%] bg-transparent px-3 text-sm text-neutral-700 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
+										containerClassName="min-w-0 max-w-[55%] border-0 rounded-none px-0"
+										className="min-w-0 w-full bg-transparent px-3 text-sm text-neutral-700 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
 										value={domainId}
 										onChange={(event) => setDomainId(event.target.value)}
 									>
