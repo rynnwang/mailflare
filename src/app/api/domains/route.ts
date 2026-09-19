@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getEnv } from "@/lib/cloudflare";
 import { requireUser } from "@/lib/auth/cookies";
+import { isAdmin } from "@/lib/auth/admin";
 import { addDomainSchema } from "@/lib/validators";
 import { addDomainForUser, getDomainDns, listUserDomains } from "@/lib/domains/service";
 import { summariseDns, type DnsStatusSummary } from "@/lib/dns-status";
@@ -51,6 +52,9 @@ export async function GET(request: NextRequest) {
 export async function POST(request: Request) {
 	const env = getEnv();
 	const user = await requireUser(env, request);
+	if (!isAdmin(user)) {
+		return NextResponse.json({ error: "Only admins can connect domains" }, { status: 403 });
+	}
 	const parsed = addDomainSchema.safeParse(await request.json());
 	if (!parsed.success) {
 		return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });

@@ -12,6 +12,7 @@ export type Account = {
 	disabled?: boolean;
 	hasAvatar?: boolean;
 	canManageMailboxes?: boolean;
+	hasPendingInvite?: boolean;
 	createdAt: string;
 	mailboxId?: string | null;
 	localPart?: string | null;

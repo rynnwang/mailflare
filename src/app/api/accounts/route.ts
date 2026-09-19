@@ -3,10 +3,12 @@ import { eq } from "drizzle-orm";
 import { getDb } from "@/db";
 import { mailboxes, users } from "@/db/schema";
 import { hashPassword } from "@/lib/auth/password";
+import { createAccountInvite } from "@/lib/auth/account-invite";
 import { newId } from "@/lib/ids";
 import { createUserAccountSchema } from "@/lib/validators";
 import { ensureEmailRoutingRuleToWorker } from "@/lib/cloudflare-api";
 import { ensureMailboxDomainRouting } from "@/lib/mailboxes/domain-addresses";
+import { createAuditLog } from "@/lib/mailboxes/audit";
 import type { CreateUserAccountInput } from "./types";
 import {
 	accountListItemFromUser,
@@ -48,14 +50,18 @@ export async function POST(request: Request) {
 	const userId = newId("usr");
 	try {
 		await ensureEmailRoutingRuleToWorker(access.env, domain.zoneId, email);
+		// No password is collected here: the account starts disabled with an unusable
+		// placeholder hash, and the invite link below is what actually activates it.
 		const [account] = await db
 			.insert(users)
 			.values({
 				id: userId,
 				email,
-				passwordHash: hashPassword(input.password),
+				passwordHash: hashPassword(crypto.randomUUID()),
 				name: username,
 				role: input.role,
+				disabled: true,
+				canManageMailboxes: true,
 				createdByUserId: access.user!.id,
 			})
 			.returning({
@@ -77,7 +83,15 @@ export async function POST(request: Request) {
 		});
 		await ensureMailboxDomainRouting(access.env, db, { id: mailboxId, domainId: domain.id, localPart: username, useAllDomains: true });
 
-		return NextResponse.json({ account: accountListItemFromUser(account) }, { status: 201 });
+		const origin = access.env.APP_URL?.trim() || new URL(request.url).origin;
+		const inviteUrl = await createAccountInvite(access.env, userId, origin);
+		await createAuditLog(access.env, {
+			actorUserId: access.user!.id,
+			targetUserId: userId,
+			action: "account.invited",
+		});
+
+		return NextResponse.json({ account: accountListItemFromUser({ ...account, hasPendingInvite: true }), inviteUrl }, { status: 201 });
 	} catch (error) {
 		await db.delete(users).where(eq(users.id, userId));
 		const message = error instanceof Error ? error.message : "Failed to create account mailbox";

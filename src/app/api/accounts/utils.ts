@@ -1,7 +1,7 @@
-import { and, desc, eq } from "drizzle-orm";
+import { and, desc, eq, gt, inArray, isNull } from "drizzle-orm";
 import { NextResponse } from "next/server";
 import type { getDb } from "@/db";
-import { domains, mailboxes, users } from "@/db/schema";
+import { domains, mailboxes, passwordResetTokens, users } from "@/db/schema";
 import { assertAdmin } from "@/lib/auth/admin";
 import { requireUser } from "@/lib/auth/cookies";
 import { getLicenseEntitlements } from "@/lib/licenses/service";
@@ -9,8 +9,24 @@ import { getEnv } from "@/lib/cloudflare";
 
 type Db = ReturnType<typeof getDb>;
 
-export function listAccountsForAdmin(db: Db) {
-	return db
+async function getUserIdsWithPendingInvite(db: Db, userIds: string[]): Promise<Set<string>> {
+	if (userIds.length === 0) return new Set();
+	const rows = await db
+		.select({ userId: passwordResetTokens.userId })
+		.from(passwordResetTokens)
+		.where(
+			and(
+				inArray(passwordResetTokens.userId, userIds),
+				eq(passwordResetTokens.purpose, "invite"),
+				isNull(passwordResetTokens.usedAt),
+				gt(passwordResetTokens.expiresAt, new Date()),
+			),
+		);
+	return new Set(rows.map((row) => row.userId));
+}
+
+export async function listAccountsForAdmin(db: Db) {
+	const rows = await db
 		.select({
 			id: users.id,
 			email: users.email,
@@ -24,6 +40,9 @@ export function listAccountsForAdmin(db: Db) {
 		})
 		.from(users)
 		.orderBy(desc(users.createdAt));
+
+	const pending = await getUserIdsWithPendingInvite(db, rows.map((row) => row.id));
+	return rows.map((row) => ({ ...row, hasPendingInvite: pending.has(row.id) }));
 }
 
 export async function getDomainForAdmin(db: Db, adminUserId: string, domainId: string) {
@@ -53,6 +72,7 @@ export function accountListItemFromUser(user: {
 	disabled: boolean;
 	avatarKey?: string | null;
 	canManageMailboxes?: boolean;
+	hasPendingInvite?: boolean;
 	createdAt: Date;
 }) {
 	return {
@@ -64,6 +84,7 @@ export function accountListItemFromUser(user: {
 		disabled: user.disabled,
 		hasAvatar: !!user.avatarKey,
 		canManageMailboxes: !!user.canManageMailboxes,
+		hasPendingInvite: !!user.hasPendingInvite,
 		createdAt: user.createdAt,
 	};
 }

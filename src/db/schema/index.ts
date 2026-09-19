@@ -476,7 +476,7 @@ export const sessions = sqliteTable("sessions", {
 		.$defaultFn(() => new Date()),
 });
 
-/** Single-use links mailed to a user's recovery address. Only the hash is stored. */
+/** Single-use links mailed to a user's recovery address, or handed to an invited teammate. Only the hash is stored. */
 export const passwordResetTokens = sqliteTable(
 	"password_reset_tokens",
 	{
@@ -485,6 +485,7 @@ export const passwordResetTokens = sqliteTable(
 			.notNull()
 			.references(() => users.id, { onDelete: "cascade" }),
 		tokenHash: text("token_hash").notNull().unique(),
+		purpose: text("purpose", { enum: ["reset", "invite"] }).notNull().default("reset"),
 		expiresAt: integer("expires_at", { mode: "timestamp" }).notNull(),
 		usedAt: integer("used_at", { mode: "timestamp" }),
 		createdAt: integer("created_at", { mode: "timestamp" })

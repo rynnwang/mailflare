@@ -31,6 +31,7 @@ const MIGRATION_NAMES = [
 	"0029_add_spam_protection.sql",
 	"0030_add_message_search_index.sql",
 	"0031_add_password_reset_and_mfa.sql",
+	"0032_add_invite_token_purpose.sql",
 ];
 
 const INITIAL_SCHEMA_SQL = `
@@ -93,7 +94,7 @@ CREATE TABLE IF NOT EXISTS webhooks (id text PRIMARY KEY NOT NULL, user_id text 
 CREATE TABLE IF NOT EXISTS webhook_deliveries (id text PRIMARY KEY NOT NULL, webhook_id text NOT NULL REFERENCES webhooks(id) ON DELETE cascade, event_type text NOT NULL, payload text NOT NULL, status text DEFAULT 'pending' NOT NULL, attempts integer DEFAULT 0 NOT NULL, response_status integer, error text, duration_ms integer, last_attempt_at integer, next_retry_at integer, created_at integer NOT NULL);
 CREATE INDEX IF NOT EXISTS webhook_deliveries_webhook_idx ON webhook_deliveries(webhook_id, created_at);
 CREATE INDEX IF NOT EXISTS webhook_deliveries_status_idx ON webhook_deliveries(status);
-CREATE TABLE IF NOT EXISTS password_reset_tokens (id text PRIMARY KEY NOT NULL, user_id text NOT NULL REFERENCES users(id) ON DELETE cascade, token_hash text NOT NULL UNIQUE, expires_at integer NOT NULL, used_at integer, created_at integer NOT NULL);
+CREATE TABLE IF NOT EXISTS password_reset_tokens (id text PRIMARY KEY NOT NULL, user_id text NOT NULL REFERENCES users(id) ON DELETE cascade, token_hash text NOT NULL UNIQUE, purpose text DEFAULT 'reset' NOT NULL, expires_at integer NOT NULL, used_at integer, created_at integer NOT NULL);
 CREATE INDEX IF NOT EXISTS password_reset_tokens_user_idx ON password_reset_tokens(user_id);
 CREATE TABLE IF NOT EXISTS mfa_recovery_codes (id text PRIMARY KEY NOT NULL, user_id text NOT NULL REFERENCES users(id) ON DELETE cascade, code_hash text NOT NULL UNIQUE, used_at integer, created_at integer NOT NULL);
 CREATE INDEX IF NOT EXISTS mfa_recovery_codes_user_idx ON mfa_recovery_codes(user_id);

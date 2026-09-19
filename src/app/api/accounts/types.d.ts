@@ -7,6 +7,8 @@ export type AccountListItem = {
 	createdAt: Date;
 	hasAvatar?: boolean;
 	canManageMailboxes?: boolean;
+	disabled?: boolean;
+	hasPendingInvite?: boolean;
 	mailboxId: string | null;
 	localPart: string | null;
 	hostname: string | null;
@@ -16,13 +18,13 @@ export type CreateAccountResult = {
 	id?: string;
 	email?: string;
 	mailboxId?: string;
+	inviteUrl?: string;
 	error?: unknown;
 };
 
 export type CreateUserAccountInput = {
 	username: string;
 	domainId: string;
-	password: string;
 	role: "admin" | "user";
 };
 

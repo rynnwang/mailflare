@@ -86,6 +86,11 @@ export const passwordResetConfirmSchema = z.object({
 	password: z.string().min(8).max(128),
 });
 
+export const acceptInviteSchema = z.object({
+	token: z.string().min(8).max(200),
+	password: z.string().min(8).max(128),
+});
+
 export const mfaVerifySchema = z.object({
 	challengeToken: z.string().min(8).max(200),
 	code: z.string().trim().min(6).max(32),
@@ -146,7 +151,6 @@ export const createAccountSchema = z.object({
 export const createUserAccountSchema = z.object({
 	username: z.string().trim().min(1).max(64).regex(/^[a-zA-Z0-9._%+-]+$/),
 	domainId: z.string().min(1),
-	password: z.string().min(8).max(128),
 	role: z.enum(["admin", "user"]).default("user"),
 });
 
