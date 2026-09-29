@@ -22,6 +22,8 @@ export type MessageListRowProps = {
 	active?: boolean;
 	compact?: boolean;
 	currentAccountName?: string;
+	/** Short label for the mailbox this message belongs to (e.g. "hello"), shown when the list spans more than one mailbox. */
+	mailboxLabel?: string | null;
 	onSelectedChange: (messageId: string, selected: boolean) => void;
 	onMessageAction: (messageId: string, action: RowMessageAction) => Promise<void>;
 	dragMessageIds: string[];

@@ -10,6 +10,7 @@ import { Tooltip } from "@/components/ui/tooltip";
 import { useCompose } from "@/components/compose/compose-context";
 import { useMailSearch } from "@/components/mail-search/mail-search-context";
 import { useSelectedMailbox } from "@/components/mailbox-provider";
+import { getMailboxName } from "@/components/mailbox-selector-utils";
 import { usePageLoading } from "@/components/page-loading";
 import { useMessageCounts } from "@/hooks/use-message-counts";
 import { useMessages } from "@/hooks/use-messages";
@@ -44,6 +45,7 @@ function MessageListRow({
 	active = false,
 	compact = false,
 	currentAccountName,
+	mailboxLabel,
 	onSelectedChange,
 	onMessageAction,
 	dragMessageIds,
@@ -109,6 +111,9 @@ function MessageListRow({
 							{(message.threadCount ?? 1) > 1 && (
 								<span className="ml-2 text-xs font-normal text-neutral-500">{message.threadCount}</span>
 							)}
+							{mailboxLabel && (
+								<span className="ml-2 rounded-full bg-neutral-100 px-1.5 py-0.5 text-[10px] font-medium text-neutral-500">{mailboxLabel}</span>
+							)}
 						</span>
 						<span className={clsx(unread ?"font-medium":"text-neutral-400","shrink-0 text-[11px]")}>
 							{formatMessageListTimestamp(message.createdAt)}
@@ -158,6 +163,9 @@ function MessageListRow({
 
 				{(message.threadCount ?? 1) > 1 && (
 					<span className="ml-2 text-xs text-neutral-500">{message.threadCount}</span>
+				)}
+				{mailboxLabel && (
+					<span className="ml-2 rounded-full bg-neutral-100 px-1.5 py-0.5 text-[10px] font-medium text-neutral-500">{mailboxLabel}</span>
 				)}
 			</span>
 			<span className="truncate text-neutral-700">
@@ -242,7 +250,10 @@ export function MessageFolderPage({
 	selectedMessageId,
 	selection,
 }: MessageFolderPageProps) {
-	const { selectedMailbox, isLoading: mailboxesLoading } = useSelectedMailbox();
+	// Every accessible mailbox is shown together — no per-mailbox filter — so a
+	// row's identity (its own account name, and the badge when there's more
+	// than one mailbox) comes from a per-message lookup, not one shared value.
+	const { selectedMailbox, mailboxes, isLoading: mailboxesLoading } = useSelectedMailbox();
 	const { query } = useMailSearch();
 	const [offset, setOffset] = useState(0);
 	const [internalSelectedMessages, setInternalSelectedMessages] = useState<
@@ -252,14 +263,14 @@ export function MessageFolderPage({
 	const [unreadOnly, setUnreadOnly] = useState(false);
 	const [conversationView] = useConversationView();
 	const grouped = conversationView && config.folder !== "drafts";
-	const { messages, isLoading, total, limit, updateMessages } = useMessages(config.folder, selectedMailbox?.id, {
+	const { messages, isLoading, total, limit, updateMessages } = useMessages(config.folder, null, {
 		query,
 		limit: pageSize,
 		offset,
 		read: unreadOnly ? "unread" : "all",
 		group: grouped ? "thread" : undefined,
 	}, !mailboxesLoading, config.folderId);
-	const { counts } = useMessageCounts(selectedMailbox?.id, !mailboxesLoading);
+	const { counts } = useMessageCounts(null, !mailboxesLoading);
 	usePageLoading(mailboxesLoading || isLoading);
 	const headerIcons = config.headerIcons ?? [];
 	const hasActiveFilters = !!query.trim();
@@ -268,8 +279,10 @@ export function MessageFolderPage({
 		: counts.folders[config.folder];
 	const titleTotal = folderCount?.total ?? total;
 	const titleUnread = folderCount?.unread ?? 0;
-	const mailboxAddress = getMailboxAddress(selectedMailbox);
-	const currentAccountName = selectedMailbox?.displayName ?? selectedMailbox?.localPart;
+	// Address suffix in the document title only makes sense when there's a single mailbox to name.
+	const mailboxAddress = mailboxes.length <= 1 ? getMailboxAddress(selectedMailbox) : null;
+	const mailboxesById = useMemo(() => new Map(mailboxes.map((mailbox) => [mailbox.id, mailbox])), [mailboxes]);
+	const showMailboxLabel = mailboxes.length > 1;
 	const pageRange = getPageRange(offset, messages.length, total);
 	const selectedMessages = selection?.selectedMessages ?? internalSelectedMessages;
 	const setSelectedMessages =
@@ -289,7 +302,7 @@ export function MessageFolderPage({
 	useEffect(() => {
 		setOffset(0);
 		setSelectedMessages([]);
-	}, [query, selectedMailbox?.id, config.folder, config.folderId, unreadOnly, grouped]);
+	}, [query, config.folder, config.folderId, unreadOnly, grouped]);
 
 	useEffect(() => {
 		setSelectedMessages([]);
@@ -449,7 +462,9 @@ export function MessageFolderPage({
 			</div>
 
 			<div className="min-h-0 flex-1 divide-y divide-neutral-100 overflow-y-auto overscroll-contain scrollbar-gutter-stable">
-				{messages.map((message) => (
+				{messages.map((message) => {
+					const messageMailbox = message.mailboxId ? mailboxesById.get(message.mailboxId) : undefined;
+					return (
 					<MessageListRow
 						key={message.id}
 						message={message}
@@ -457,14 +472,16 @@ export function MessageFolderPage({
 						selected={selectedIds.includes(message.id)}
 						active={message.id === selectedMessageId}
 						compact={compact}
-						currentAccountName={currentAccountName}
+						currentAccountName={messageMailbox ? getMailboxName(messageMailbox) : undefined}
+						mailboxLabel={showMailboxLabel && messageMailbox ? getMailboxName(messageMailbox) : null}
 						onSelectedChange={updateSelectedMessage}
 						onMessageAction={(messageId, action) =>
 							runBulkMessageAction(expandSelectedIds([messageId]), action, action !== "read" && action !== "unread")
 						}
 						dragMessageIds={expandSelectedIds(selectedIds.includes(message.id) ? selectedIds : [message.id])}
 					/>
-				))}
+					);
+				})}
 				{!isLoading && messages.length === 0 && (
 					<p className="px-6 py-4 text-sm text-neutral-500">
 						{hasActiveFilters ? "No messages match these filters" : config.emptyText}
