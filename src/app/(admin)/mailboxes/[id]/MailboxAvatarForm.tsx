@@ -49,7 +49,7 @@ export default function MailboxAvatarForm({
 			setAvatarUrl(nextAvatarUrl);
 			setHasAvatar(true);
 			dispatchMailboxAvatarChanged(mailboxId, nextAvatarUrl);
-			await queryClient.invalidateQueries({ queryKey: ["mailboxes"] });
+			queryClient.removeQueries({ queryKey: ["mailboxes"] });
 		} catch (error) {
 			setStatus(error instanceof Error ? error.message : "Upload failed");
 		} finally {

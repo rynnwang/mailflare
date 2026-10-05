@@ -60,15 +60,17 @@ export default function MailboxSettingsPage() {
     mutationFn: () => updateMailboxSettings(mailboxId, { displayName, useAllDomains }),
     onSuccess: (updatedMailbox) => {
       qc.setQueryData(["mailbox", mailboxId], updatedMailbox);
-      qc.invalidateQueries({ queryKey: ["mailboxes"] });
+      // The list page isn't mounted here and the app sets refetchOnMount: false, so
+      // invalidating would leave the stale list in place; drop it so it refetches.
+      qc.removeQueries({ queryKey: ["mailboxes"] });
     },
   });
 
   const router = useRouter();
   const removeMailbox = useMutation({
     mutationFn: () => deleteMailbox(mailboxId),
-    onSuccess: async () => {
-      await qc.invalidateQueries({ queryKey: ["mailboxes"] });
+    onSuccess: () => {
+      qc.removeQueries({ queryKey: ["mailboxes"] });
       router.push("/mailboxes");
     },
   });
