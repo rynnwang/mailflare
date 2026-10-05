@@ -90,13 +90,22 @@ export async function ensureMailboxDomainRouting(
 		.where(eq(domains.userId, primaryDomain.userId));
 	const domainsByHostname = new Map(availableDomains.map((domain) => [domain.hostname.toLowerCase(), domain]));
 
-	await Promise.all(
+	const results = await Promise.allSettled(
 		addresses.map(async (address) => {
 			const hostname = address.slice(address.lastIndexOf("@") + 1);
 			const domain = domainsByHostname.get(hostname);
 			if (domain) await ensureEmailRoutingRuleToWorker(env, domain.zoneId, address);
 		}),
 	);
+	// The primary address must be routed. The same-name addresses auto-created on the
+	// owner's other domains are best-effort: an existing rule there (e.g. a forward set
+	// up before Mailflare) is left alone rather than failing the whole mailbox.
+	// getMailboxDomainAddresses always puts the primary address first.
+	results.forEach((result, index) => {
+		if (result.status !== "rejected") return;
+		if (index === 0) throw result.reason;
+		console.warn(`Skipped routing ${addresses[index]}:`, result.reason);
+	});
 }
 
 export async function removeMailboxDomainRouting(
