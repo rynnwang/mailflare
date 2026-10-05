@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { CalendarDays, Check, LogOut, Settings, ShieldCheck, UserRound, UsersRound } from "lucide-react";
+import { CalendarDays, Check, Inbox, LogOut, Settings, ShieldCheck, UserRound, UsersRound } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useSelectedMailbox } from "@/components/mailbox-provider";
 import { isIdentityMailbox } from "@/components/mailbox-provider-utils";
@@ -299,6 +299,16 @@ export function MailboxSelector() {
 					)}
 
 					<div className="mt-2 overflow-hidden rounded-[22px] bg-white">
+						{adminActive && (
+							<Link
+								href="/inbox"
+								onClick={() => setOpen(false)}
+								className="flex items-center gap-3 px-5 py-4 text-sm font-medium text-neutral-800 hover:bg-[#f2f6fc]"
+							>
+								<Inbox className="h-5 w-5 text-neutral-600" />
+								Mail
+							</Link>
+						)}
 						{user?.role === "admin" && (
 							<Link
 								href="/admin"

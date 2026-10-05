@@ -10,6 +10,7 @@ import {
   Users,
   Route,
   Webhook,
+  Inbox,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { NavItem } from "./components-nav";
@@ -21,7 +22,10 @@ import { useSidebar } from "./sidebar-state";
 const sections = [
   {
     // label: "Overview",
-    links: [{ href: "/admin", label: "Overview", icon: Settings }],
+    links: [
+      { href: "/inbox", label: "Back to mail", icon: Inbox },
+      { href: "/admin", label: "Overview", icon: Settings },
+    ],
   },
   {
     label: "Email",
